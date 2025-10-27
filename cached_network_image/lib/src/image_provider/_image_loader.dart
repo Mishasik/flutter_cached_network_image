@@ -112,14 +112,12 @@ class ImageLoader implements platform.ImageLoader {
           chunkEvents.add(ImageChunkEvent(
               cumulativeBytesLoaded: result.downloaded,
               expectedTotalBytes: result.totalSize));
-          //TODO: status loading!
         }
         if (result is FileInfo) {
           final file = result.file;
           final bytes = await file.readAsBytes();
           final decoded = await decode(bytes);
           yield decoded;
-          //TODO: status success!
         }
       }
     } on Object catch (error, stackTrace) {
@@ -137,47 +135,38 @@ class ImageLoader implements platform.ImageLoader {
 
   @override
   Stream<ui.Codec> loadImageFromNsgItemAsync(
-    NsgImageItem item,
-    String? cacheKey,
-    StreamController<ImageChunkEvent> chunkEvents,
-    ImageDecoderCallback decode,
-    BaseCacheManager cacheManager,
-    int? maxHeight,
-    int? maxWidth,
-    Map<String, String>? headers,
-    ImageRenderMethodForWeb imageRenderMethodForWeb,
-    ui.VoidCallback evictImage,
-  ) {
-    return _loadFromNsgImage(
-      item,
-      cacheKey,
-      chunkEvents,
-      (bytes) async {
-        final buffer = await ImmutableBuffer.fromUint8List(bytes);
-        return decode(buffer);
-      },
-      cacheManager,
-      maxHeight,
-      maxWidth,
-      headers,
-      imageRenderMethodForWeb,
-      evictImage,
-    );
+      NsgImageItem item,
+      String? cacheKey,
+      StreamController<ImageChunkEvent> chunkEvents,
+      ImageDecoderCallback decode,
+      BaseCacheManager cacheManager,
+      int? maxHeight,
+      int? maxWidth,
+      Map<String, String>? headers,
+      ImageRenderMethodForWeb imageRenderMethodForWeb,
+      ui.VoidCallback evictImage,
+      {double? maxImageWidth}) {
+    return _loadFromNsgImage(item, cacheKey, chunkEvents, (bytes) async {
+      final buffer = await ImmutableBuffer.fromUint8List(bytes);
+      return decode(buffer);
+    }, cacheManager, maxHeight, maxWidth, headers, imageRenderMethodForWeb,
+        evictImage,
+        maxImageWidth: maxImageWidth);
   }
 
   // ignore: unused_element
   Stream<ui.Codec> _loadFromNsgImage(
-    NsgImageItem item,
-    String? cacheKey,
-    StreamController<ImageChunkEvent> chunkEvents,
-    Future<ui.Codec> Function(Uint8List) decode,
-    BaseCacheManager cacheManager,
-    int? maxHeight,
-    int? maxWidth,
-    Map<String, String>? headers,
-    ImageRenderMethodForWeb imageRenderMethodForWeb,
-    VoidCallback evictImage,
-  ) async* {
+      NsgImageItem item,
+      String? cacheKey,
+      StreamController<ImageChunkEvent> chunkEvents,
+      Future<ui.Codec> Function(Uint8List) decode,
+      BaseCacheManager cacheManager,
+      int? maxHeight,
+      int? maxWidth,
+      Map<String, String>? headers,
+      ImageRenderMethodForWeb imageRenderMethodForWeb,
+      VoidCallback evictImage,
+      {double? maxImageWidth}) async* {
     try {
       assert(
         cacheManager is ImageCacheManager ||
@@ -192,24 +181,26 @@ class ImageLoader implements platform.ImageLoader {
           'cacheManager должен быть NsgImageCacheManager');
 
       final Stream<FileResponse> stream = cacheManager is ImageCacheManager
-          ? (cacheManager as NsgImageCacheManager)
-              .getImageFileUsingDataItem(item)
-          : (cacheManager as NsgImageCacheManager)
-              .getFileStreamUsingDataItem(item);
+          ? (cacheManager as NsgImageCacheManager).getImageFileUsingDataItem(
+              item,
+              maxWidth: maxImageWidth,
+            )
+          : (cacheManager as NsgImageCacheManager).getFileStreamUsingDataItem(
+              item,
+              maxWidth: maxImageWidth,
+            );
 
       await for (final result in stream) {
         if (result is DownloadProgress) {
           chunkEvents.add(ImageChunkEvent(
               cumulativeBytesLoaded: result.downloaded,
               expectedTotalBytes: result.totalSize));
-          //TODO: status loading!
         }
         if (result is FileInfo) {
           final file = result.file;
           final bytes = await file.readAsBytes();
           final decoded = await decode(bytes);
           yield decoded;
-          //TODO: status success!
         }
       }
     } on Object catch (error, stackTrace) {

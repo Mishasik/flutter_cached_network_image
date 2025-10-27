@@ -29,17 +29,23 @@ class CachedNetworkImageProvider
     this.scale = 1.0,
     this.errorListener,
     this.headers,
+    this.delayedDone,
+    this.onLoadingProgress,
     this.cacheManager,
     this.cacheKey,
     this.imageRenderMethodForWeb = ImageRenderMethodForWeb.HtmlImage,
-  }) : imageItem = null;
+  })  : imageItem = null,
+        maxImageWidth = null;
 
   CachedNetworkImageProvider.item(
     this.imageItem, {
     this.maxHeight,
     this.maxWidth,
+    this.maxImageWidth,
     this.scale = 1.0,
     this.errorListener,
+    this.delayedDone,
+    this.onLoadingProgress,
     this.headers,
     NsgImageCacheManager? manager,
     this.cacheKey,
@@ -80,6 +86,12 @@ class CachedNetworkImageProvider
   final ImageRenderMethodForWeb imageRenderMethodForWeb;
 
   final NsgImageItem? imageItem;
+
+  final void Function(double? progress, bool isDone)? onLoadingProgress;
+
+  final Duration? delayedDone;
+
+  final double? maxImageWidth;
 
   @override
   Future<CachedNetworkImageProvider> obtainKey(
@@ -134,7 +146,9 @@ class CachedNetworkImageProvider
 
   @override
   ImageStreamCompleter loadImage(
-      CachedNetworkImageProvider key, ImageDecoderCallback decode) {
+    CachedNetworkImageProvider key,
+    ImageDecoderCallback decode,
+  ) {
     final chunkEvents = StreamController<ImageChunkEvent>();
     final imageStreamCompleter = MultiImageStreamCompleter(
       codec: _loadImageAsync(key, chunkEvents, decode),
@@ -144,6 +158,35 @@ class CachedNetworkImageProvider
         DiagnosticsProperty<ImageProvider>('Image provider', this),
         DiagnosticsProperty<CachedNetworkImageProvider>('Image key', key),
       ],
+    );
+
+    imageStreamCompleter.addListener(
+      ImageStreamListener(
+        (image, synchronousCall) {
+          if (delayedDone != null) {
+            Future.delayed(delayedDone!, () {
+              onLoadingProgress!(100, true);
+            });
+          } else {
+            onLoadingProgress!(100, true);
+          }
+        },
+        onChunk: (event) {
+          var totalSize = event.expectedTotalBytes;
+          var downloaded = event.cumulativeBytesLoaded;
+
+          if (onLoadingProgress != null) {
+            if (totalSize != null) {
+              onLoadingProgress!((downloaded / totalSize) * 100, false);
+            } else {
+              onLoadingProgress!(null, false);
+            }
+          }
+        },
+        onError: (Object error, StackTrace? trace) {
+          errorListener?.call(error);
+        },
+      ),
     );
 
     if (errorListener != null) {
@@ -168,19 +211,17 @@ class CachedNetworkImageProvider
     String loadUrl = url ?? "";
     if (cacheManager is NsgImageCacheManager && imageItem != null) {
       return ImageLoader().loadImageFromNsgItemAsync(
-        imageItem!,
-        cacheKey,
-        chunkEvents,
-        decode,
-        cacheManager ?? defaultCacheManager,
-        maxHeight,
-        maxWidth,
-        headers,
-        imageRenderMethodForWeb,
-        () {
-          PaintingBinding.instance.imageCache.evict(key);
-        },
-      );
+          imageItem!,
+          cacheKey,
+          chunkEvents,
+          decode,
+          cacheManager ?? defaultCacheManager,
+          maxHeight,
+          maxWidth,
+          headers,
+          imageRenderMethodForWeb, () {
+        PaintingBinding.instance.imageCache.evict(key);
+      }, maxImageWidth: maxImageWidth);
     } else {
       return ImageLoader().loadImageAsync(
         loadUrl,

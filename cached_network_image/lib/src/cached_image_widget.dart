@@ -198,6 +198,10 @@ class CachedNetworkImage extends StatelessWidget {
 
   final NsgImageItem? nsgImage;
 
+  final void Function(double? progress, bool isDone)? onLoadingProgress;
+
+  final double? maxImageWidth;
+
   /// CachedNetworkImage shows a network image using a caching mechanism. It also
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
@@ -209,6 +213,8 @@ class CachedNetworkImage extends StatelessWidget {
     this.httpHeaders,
     this.imageBuilder,
     this.placeholder,
+    this.maxImageWidth,
+    this.onLoadingProgress,
     this.progressIndicatorBuilder,
     this.errorWidget,
     this.fadeOutDuration = const Duration(milliseconds: 1000),
@@ -237,8 +243,7 @@ class CachedNetworkImage extends StatelessWidget {
         ImageRenderMethodForWeb.HtmlImage,
     double scale = 1.0,
   }) : _image = nsgImage == null
-            ? CachedNetworkImageProvider(
-                imageUrl,
+            ? CachedNetworkImageProvider(imageUrl,
                 headers: httpHeaders,
                 cacheManager: cacheManager,
                 cacheKey: cacheKey,
@@ -247,9 +252,11 @@ class CachedNetworkImage extends StatelessWidget {
                 maxHeight: maxHeightDiskCache,
                 errorListener: errorListener,
                 scale: scale,
-              )
-            : CachedNetworkImageProvider.item(
-                nsgImage as NsgImageItem?,
+                delayedDone: fadeOutDuration != null
+                    ? (fadeOutDuration + const Duration(milliseconds: 100))
+                    : null,
+                onLoadingProgress: onLoadingProgress)
+            : CachedNetworkImageProvider.item(nsgImage as NsgImageItem?,
                 headers: httpHeaders,
                 manager:
                     cacheManager is NsgImageCacheManager ? cacheManager : null,
@@ -259,7 +266,11 @@ class CachedNetworkImage extends StatelessWidget {
                 maxHeight: maxHeightDiskCache,
                 errorListener: errorListener,
                 scale: scale,
-              );
+                delayedDone: fadeOutDuration != null
+                    ? (fadeOutDuration + const Duration(milliseconds: 100))
+                    : null,
+                onLoadingProgress: onLoadingProgress,
+                maxImageWidth: maxImageWidth);
 
   @override
   Widget build(BuildContext context) {

@@ -60,17 +60,17 @@ class ImageLoader {
   }
 
   Stream<ui.Codec> loadImageFromNsgItemAsync(
-    NsgImageItem item,
-    String? cacheKey,
-    StreamController<ImageChunkEvent> chunkEvents,
-    ImageDecoderCallback decode,
-    BaseCacheManager cacheManager,
-    int? maxHeight,
-    int? maxWidth,
-    Map<String, String>? headers,
-    ImageRenderMethodForWeb imageRenderMethodForWeb,
-    VoidCallback evictImage,
-  ) {
+      NsgImageItem item,
+      String? cacheKey,
+      StreamController<ImageChunkEvent> chunkEvents,
+      ImageDecoderCallback decode,
+      BaseCacheManager cacheManager,
+      int? maxHeight,
+      int? maxWidth,
+      Map<String, String>? headers,
+      ImageRenderMethodForWeb imageRenderMethodForWeb,
+      VoidCallback evictImage,
+      {double? maxImageWidth}) {
     throw UnimplementedError();
   }
 }

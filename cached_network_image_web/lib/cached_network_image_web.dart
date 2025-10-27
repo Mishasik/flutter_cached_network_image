@@ -214,7 +214,8 @@ class ImageLoader implements platform.ImageLoader {
       int? maxWidth,
       Map<String, String>? headers,
       platform.ImageRenderMethodForWeb imageRenderMethodForWeb,
-      ui.VoidCallback evictImage) {
+      ui.VoidCallback evictImage,
+      {double? maxImageWidth}) {
     throw UnimplementedError();
   }
 }
