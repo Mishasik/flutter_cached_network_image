@@ -4,6 +4,7 @@ library cached_network_image_platform_interface;
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image_platform_interface/nsg_image_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
@@ -45,6 +46,21 @@ class ImageLoader {
   /// Stream gives the option to show multiple images after each other.
   Stream<ui.Codec> loadImageAsync(
     String url,
+    String? cacheKey,
+    StreamController<ImageChunkEvent> chunkEvents,
+    ImageDecoderCallback decode,
+    BaseCacheManager cacheManager,
+    int? maxHeight,
+    int? maxWidth,
+    Map<String, String>? headers,
+    ImageRenderMethodForWeb imageRenderMethodForWeb,
+    VoidCallback evictImage,
+  ) {
+    throw UnimplementedError();
+  }
+
+  Stream<ui.Codec> loadImageFromNsgItemAsync(
+    NsgImageItem item,
     String? cacheKey,
     StreamController<ImageChunkEvent> chunkEvents,
     ImageDecoderCallback decode,

@@ -1,40 +1,33 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/src/image_provider/cached_network_image_provider.dart';
+import 'package:cached_network_image/src/image_provider/nsg_image_cache_manager.dart';
 import 'package:cached_network_image_platform_interface/cached_network_image_platform_interface.dart';
+import 'package:cached_network_image_platform_interface/nsg_image_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
 import 'package:octo_image/octo_image.dart';
 
 /// Builder function to create an image widget. The function is called after
 /// the ImageProvider completes the image loading.
 typedef ImageWidgetBuilder = Widget Function(
-  BuildContext context,
-  ImageProvider imageProvider,
-);
+    BuildContext context, ImageProvider imageProvider);
 
 /// Builder function to create a placeholder widget. The function is called
 /// once while the ImageProvider is loading the image.
 typedef PlaceholderWidgetBuilder = Widget Function(
-  BuildContext context,
-  String url,
-);
+    BuildContext context, String url);
 
 /// Builder function to create a progress indicator widget. The function is
 /// called every time a chuck of the image is downloaded from the web, but at
 /// least once during image loading.
 typedef ProgressIndicatorBuilder = Widget Function(
-  BuildContext context,
-  String url,
-  DownloadProgress progress,
-);
+    BuildContext context, String url, DownloadProgress progress);
 
 /// Builder function to create an error widget. This builder is called when
 /// the image failed loading, for example due to a 404 NotFound exception.
 typedef LoadingErrorWidgetBuilder = Widget Function(
-  BuildContext context,
-  String url,
-  Object error,
-);
+    BuildContext context, String url, Object error);
 
 /// Image widget to show NetworkImage with caching functionality.
 class CachedNetworkImage extends StatelessWidget {
@@ -49,12 +42,10 @@ class CachedNetworkImage extends StatelessWidget {
   /// [BaseCacheManager] as the in memory [ImageCache] of the [ImageProvider].
   /// [url] is used by both the disk and memory cache. The scale is only used
   /// to clear the image from the [ImageCache].
-  static Future<bool> evictFromCache(
-    String url, {
-    String? cacheKey,
-    BaseCacheManager? cacheManager,
-    double scale = 1,
-  }) async {
+  static Future<bool> evictFromCache(String url,
+      {String? cacheKey,
+      BaseCacheManager? cacheManager,
+      double scale = 1}) async {
     final effectiveCacheManager =
         cacheManager ?? CachedNetworkImageProvider.defaultCacheManager;
     await effectiveCacheManager.removeFile(cacheKey ?? url);
@@ -205,6 +196,8 @@ class CachedNetworkImage extends StatelessWidget {
   /// Listener to be called when images fails to load.
   final ValueChanged<Object>? errorListener;
 
+  final NsgImageItem? nsgImage;
+
   /// CachedNetworkImage shows a network image using a caching mechanism. It also
   /// provides support for a placeholder, showing an error and fading into the
   /// loaded image. Next to that it supports most features of a default Image
@@ -212,6 +205,7 @@ class CachedNetworkImage extends StatelessWidget {
   CachedNetworkImage({
     super.key,
     required this.imageUrl,
+    this.nsgImage,
     this.httpHeaders,
     this.imageBuilder,
     this.placeholder,
@@ -242,17 +236,30 @@ class CachedNetworkImage extends StatelessWidget {
     ImageRenderMethodForWeb imageRenderMethodForWeb =
         ImageRenderMethodForWeb.HtmlImage,
     double scale = 1.0,
-  }) : _image = CachedNetworkImageProvider(
-          imageUrl,
-          headers: httpHeaders,
-          cacheManager: cacheManager,
-          cacheKey: cacheKey,
-          imageRenderMethodForWeb: imageRenderMethodForWeb,
-          maxWidth: maxWidthDiskCache,
-          maxHeight: maxHeightDiskCache,
-          errorListener: errorListener,
-          scale: scale,
-        );
+  }) : _image = nsgImage == null
+            ? CachedNetworkImageProvider(
+                imageUrl,
+                headers: httpHeaders,
+                cacheManager: cacheManager,
+                cacheKey: cacheKey,
+                imageRenderMethodForWeb: imageRenderMethodForWeb,
+                maxWidth: maxWidthDiskCache,
+                maxHeight: maxHeightDiskCache,
+                errorListener: errorListener,
+                scale: scale,
+              )
+            : CachedNetworkImageProvider.item(
+                nsgImage as NsgImageItem?,
+                headers: httpHeaders,
+                manager:
+                    cacheManager is NsgImageCacheManager ? cacheManager : null,
+                cacheKey: cacheKey,
+                imageRenderMethodForWeb: imageRenderMethodForWeb,
+                maxWidth: maxWidthDiskCache,
+                maxHeight: maxHeightDiskCache,
+                errorListener: errorListener,
+                scale: scale,
+              );
 
   @override
   Widget build(BuildContext context) {
@@ -304,9 +311,7 @@ class CachedNetworkImage extends StatelessWidget {
   }
 
   Widget _octoProgressIndicatorBuilder(
-    BuildContext context,
-    ImageChunkEvent? progress,
-  ) {
+      BuildContext context, ImageChunkEvent? progress) {
     int? totalSize;
     var downloaded = 0;
     if (progress != null) {
@@ -314,17 +319,11 @@ class CachedNetworkImage extends StatelessWidget {
       downloaded = progress.cumulativeBytesLoaded;
     }
     return progressIndicatorBuilder!(
-      context,
-      imageUrl,
-      DownloadProgress(imageUrl, totalSize, downloaded),
-    );
+        context, imageUrl, DownloadProgress(imageUrl, totalSize, downloaded));
   }
 
   Widget _octoErrorBuilder(
-    BuildContext context,
-    Object error,
-    StackTrace? stackTrace,
-  ) {
+      BuildContext context, Object error, StackTrace? stackTrace) {
     return errorWidget!(context, imageUrl, error);
   }
 }
