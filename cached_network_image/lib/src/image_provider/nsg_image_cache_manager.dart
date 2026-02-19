@@ -8,7 +8,8 @@ class NsgImageCacheManager extends CacheManager with ImageCacheManager {
 
   static final NsgImageCacheManager _instance = NsgImageCacheManager._();
 
-  factory NsgImageCacheManager({double smallBpSet = 150, double mediumBpSet = 300}) {
+  factory NsgImageCacheManager(
+      {double smallBpSet = 150, double mediumBpSet = 300}) {
     smallBp = smallBpSet;
     mediumBp = mediumBpSet;
     return _instance;
@@ -20,31 +21,53 @@ class NsgImageCacheManager extends CacheManager with ImageCacheManager {
   NsgImageCacheManager._() : super(Config(key));
 
   Stream<FileResponse> getFileStreamUsingDataItem(NsgImageItem image,
-      {String? key, Map<String, String>? headers, bool withProgress = false, double? maxWidth, double? maxHeight}) async* {
+      {String? key,
+      Map<String, String>? headers,
+      bool withProgress = false,
+      double? maxWidth,
+      double? maxHeight}) async* {
     var newUrl = await _changeLink(image, width: maxWidth);
 
-    yield* getFileStream(newUrl, key: key, headers: headers, withProgress: withProgress);
+    yield* getFileStream(newUrl,
+        key: key, headers: headers, withProgress: withProgress);
   }
 
   Stream<FileResponse> getImageFileUsingDataItem(NsgImageItem image,
-      {String? key, Map<String, String>? headers, bool withProgress = false, double? maxWidth, double? maxHeight}) async* {
+      {String? key,
+      Map<String, String>? headers,
+      bool withProgress = false,
+      double? maxWidth,
+      double? maxHeight}) async* {
     var newUrl = await _changeLink(image, width: maxWidth);
 
-    yield* getImageFile(newUrl, key: key, headers: headers, withProgress: withProgress);
+    yield* getImageFile(newUrl,
+        key: key, headers: headers, withProgress: withProgress);
   }
 
   @override
-  Stream<FileResponse> getImageFile(String url, {String? key, Map<String, String>? headers, bool withProgress = false, int? maxHeight, int? maxWidth}) {
+  Stream<FileResponse> getImageFile(String url,
+      {String? key,
+      Map<String, String>? headers,
+      bool withProgress = false,
+      int? maxHeight,
+      int? maxWidth}) {
     var newUrl = url;
 
-    return super.getImageFile(newUrl, key: key, headers: headers, withProgress: withProgress, maxHeight: maxHeight, maxWidth: maxWidth);
+    return super.getImageFile(newUrl,
+        key: key,
+        headers: headers,
+        withProgress: withProgress,
+        maxHeight: maxHeight,
+        maxWidth: maxWidth);
   }
 
   @override
-  Stream<FileResponse> getFileStream(String url, {String? key, Map<String, String>? headers, bool withProgress = false}) {
+  Stream<FileResponse> getFileStream(String url,
+      {String? key, Map<String, String>? headers, bool withProgress = false}) {
     var newUrl = url;
 
-    return super.getFileStream(newUrl, key: key, headers: headers, withProgress: withProgress);
+    return super.getFileStream(newUrl,
+        key: key, headers: headers, withProgress: withProgress);
   }
 
   ImageSize _selectSize(double w) {
@@ -85,7 +108,8 @@ class NsgImageCacheManager extends CacheManager with ImageCacheManager {
     }
 
     if (newUrl != url) {
-      dev.log('🔄 Подмена ссылки для кэша: \n оригинал: $url \n заменён:  $newUrl');
+      dev.log(
+          '🔄 Подмена ссылки для кэша: \n оригинал: $url \n заменён:  $newUrl');
     }
     return newUrl;
   }
